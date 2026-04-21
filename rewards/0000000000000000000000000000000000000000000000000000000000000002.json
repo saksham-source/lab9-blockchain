@@ -1,0 +1,6 @@
+{
+  "name": "Iron Sword",
+  "description": "A basic weapon for new adventurers.",
+  "image": "ipfs://<IMAGE_CID>/sword.png",
+  "properties": { "type": "weapon", "damage": 10 }
+}

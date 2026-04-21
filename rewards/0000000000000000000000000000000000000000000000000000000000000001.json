@@ -1,0 +1,7 @@
+{
+  "name": "Silver Coin",
+  "description": "Lesser fungible currency.",
+  "image": "ipfs://<IMAGE_CID>/silver.png",
+  "decimals": 18,
+  "properties": { "type": "currency", "fungible": true }
+}

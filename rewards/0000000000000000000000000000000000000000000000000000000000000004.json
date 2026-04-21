@@ -1,0 +1,6 @@
+{
+  "name": "Royal Crown",
+  "description": "Unique NFT worn only by the king.",
+  "image": "ipfs://<IMAGE_CID>/crown.png",
+  "properties": { "type": "cosmetic", "unique": true }
+}

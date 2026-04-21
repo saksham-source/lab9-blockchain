@@ -1,0 +1,6 @@
+{
+  "name": "Wooden Shield",
+  "description": "Basic defense item.",
+  "image": "ipfs://<IMAGE_CID>/shield.png",
+  "properties": { "type": "armor", "defense": 8 }
+}

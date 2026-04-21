@@ -1,0 +1,7 @@
+{
+  "name": "Gold Coin",
+  "description": "Fungible in-game currency. Trade it for items and upgrades.",
+  "image": "ipfs://<IMAGE_CID>/gold.png",
+  "decimals": 18,
+  "properties": { "type": "currency", "fungible": true }
+}

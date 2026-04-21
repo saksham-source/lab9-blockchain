@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AwesomeGame - ERC1155 RPG Frontend</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+            background: linear-gradient(135deg, #3b82f6 0%, #0ea5a4 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .connection-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .status-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .status-label {
+            font-size: 0.85em;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-value {
+            font-size: 0.95em;
+            color: #333;
+            word-break: break-all;
+            max-width: 250px;
+        }
+
+        .status-chip {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 0.8em;
+            font-weight: 700;
+            width: fit-content;
+        }
+
+        .status-chip.ok {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-chip.warn {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.95em;
+            font-family: monospace;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .token-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .token-item {
+            background: #f3f4f6;
+            padding: 12px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .token-item .name {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .token-item .value {
+            font-size: 0.9em;
+            color: #666;
+            word-break: break-all;
+        }
+
+        .output-box {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            border-left: 4px solid #10b981;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .output-box.error {
+            border-left-color: #ef4444;
+            color: #dc2626;
+        }
+
+        .output-box.success {
+            border-left-color: #10b981;
+            color: #059669;
+        }
+
+        .output-box.info {
+            border-left-color: #3b82f6;
+            color: #1d4ed8;
+        }
+
+        .loading {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .warning {
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            padding: 12px;
+            border-radius: 5px;
+            color: #92400e;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+
+        .success-banner {
+            background: #d1fae5;
+            border: 1px solid #6ee7b7;
+            padding: 12px;
+            border-radius: 5px;
+            color: #065f46;
+            margin-bottom: 15px;
+        }
+
+        .hash-display {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 0.85em;
+        }
+
+        .hash-link {
+            color: #667eea;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .hash-link:hover {
+            text-decoration: underline;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #999;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .batch-input {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .batch-input .form-group {
+            margin-bottom: 10px;
+        }
+
+        .add-btn {
+            padding: 8px 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .add-btn:hover {
+            background: #764ba2;
+        }
+
+        .batch-items {
+            margin-top: 10px;
+        }
+
+        .batch-item {
+            background: white;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .remove-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        @media (max-width: 768px) {
+            .connection-section {
+                flex-direction: column;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 AwesomeGame</h1>
+            <p>ERC-1155 Multi-Token RPG Contract Interface</p>
+        </div>
+
+        <!-- Connection Section -->
+        <div class="connection-section">
+            <div class="status-info">
+                <div class="status-item">
+                    <span class="status-label">Status</span>
+                    <span class="status-value" id="walletStatus">Disconnected</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Wallet Address</span>
+                    <span class="status-value" id="walletAddress">Not connected</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Contract Address</span>
+                    <span class="status-value" id="contractAddress">Not deployed</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Network</span>
+                    <span class="status-value" id="networkStatus">Unknown</span>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="connectBtn" onclick="connectWallet()">Connect MetaMask</button>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid">
+            <!-- Deploy Contract Card -->
+            <div class="card">
+                <h2>📋 Deploy Contract</h2>
+                <p style="color: #666; margin-bottom: 15px; font-size: 0.95em;">Deploy a new AwesomeGame contract to the blockchain. This will initialize all tokens with default amounts.</p>
+                <div class="form-group">
+                    <label>Metadata URI (IPFS)</label>
+                    <input type="text" id="metadataUri" value="https://harlequin-acceptable-rat-954.mypinata.cloud/ipfs/bafybeibsqc6vginftv3gi3nkvtw4ugjaact767uv6ztbwspbdk4r5heive/{id}.json" readonly>
+                </div>
+                <button class="btn btn-success" onclick="deployContract()" id="deployBtn">Deploy Contract</button>
+                <div class="output-box" id="deployOutput" style="display:none;"></div>
+            </div>
+
+            <!-- Mint Single Token Card -->
+            <div class="card">
+                <h2>🪙 Mint Single Token</h2>
+                <p style="color: #666; margin-bottom: 15px; font-size: 0.95em;">Mint a specific amount of a single token type.</p>
+                
+                <div class="form-group">
+                    <label>Recipient Address</label>
+                    <input type="text" id="mintRecipient" placeholder="0x..." value="">
+                </div>
+
+                <div class="form-group">
+                    <label>Token ID</label>
+                    <select id="mintTokenId" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="0">0 - GOLD (Fungible)</option>
+                        <option value="1">1 - SILVER (Fungible)</option>
+                        <option value="2">2 - SWORD (Weapon)</option>
+                        <option value="3">3 - SHIELD (Weapon)</option>
+                        <option value="4">4 - CROWN (NFT)</option>
+                        <option value="5">5 - WINNER_PRIZE (NFT)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="mintAmount" placeholder="1000" value="1000">
+                </div>
+
+                <button class="btn btn-success" onclick="mintToken()" id="mintBtn">Mint Token</button>
+                <div class="output-box" id="mintOutput" style="display:none;"></div>
+            </div>
+
+            <!-- Mint Batch Card -->
+            <div class="card">
+                <h2>📦 Mint Batch Tokens</h2>
+                <p style="color: #666; margin-bottom: 15px; font-size: 0.95em;">Mint multiple token types in a single transaction.</p>
+
+                <div class="form-group">
+                    <label>Recipient Address</label>
+                    <input type="text" id="batchRecipient" placeholder="0x..." value="">
+                </div>
+
+                <div class="batch-input">
+                    <div class="form-group">
+                        <label>Add Tokens to Batch</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="batchTokenId" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                <option value="0">0 - GOLD</option>
+                                <option value="1">1 - SILVER</option>
+                                <option value="2">2 - SWORD</option>
+                                <option value="3">3 - SHIELD</option>
+                                <option value="4">4 - CROWN</option>
+                                <option value="5">5 - WINNER_PRIZE</option>
+                            </select>
+                            <input type="number" id="batchTokenAmount" placeholder="Amount" value="100" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <button class="add-btn" onclick="addBatchItem()">Add</button>
+                        </div>
+                    </div>
+
+                    <div class="batch-items" id="batchItems"></div>
+                </div>
+
+                <button class="btn btn-success" onclick="mintBatch()" id="batchMintBtn">Mint Batch</button>
+                <div class="output-box" id="batchMintOutput" style="display:none;"></div>
+            </div>
+
+            <!-- Transfer Single Card -->
+            <div class="card">
+                <h2>📤 Transfer Single Token</h2>
+                <p style="color: #666; margin-bottom: 15px; font-size: 0.95em;">Transfer a specific amount of a token to another address using safeTransferFrom.</p>
+
+                <div class="form-group">
+                    <label>Recipient Address</label>
+                    <input type="text" id="transferRecipient" placeholder="0xf16095EEFBA8B88fe92180c1aca76B17ea68B101" value="0xf16095EEFBA8B88fe92180c1aca76B17ea68B101">
+                </div>
+
+                <div class="form-group">
+                    <label>Token ID</label>
+                    <select id="transferTokenId" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="0">0 - GOLD</option>
+                        <option value="1">1 - SILVER</option>
+                        <option value="2">2 - SWORD</option>
+                        <option value="3">3 - SHIELD</option>
+                        <option value="4">4 - CROWN</option>
+                        <option value="5">5 - WINNER_PRIZE</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="transferAmount" placeholder="100" value="100">
+                </div>
+
+                <button class="btn btn-success" onclick="transferToken()" id="transferBtn">Transfer Token</button>
+                <div class="output-box" id="transferOutput" style="display:none;"></div>
+            </div>
+
+            <!-- Transfer Batch Card -->
+            <div class="card">
+                <h2>📬 Transfer Batch Tokens</h2>
+                <p style="color: #666; margin-bottom: 15px; font-size: 0.95em;">Transfer multiple token types to an address using safeBatchTransferFrom.</p>
+
+                <div class="form-group">
+                    <label>Recipient Address</label>
+                    <input type="text" id="batchTransferRecipient" placeholder="0xf16095EEFBA8B88fe92180c1aca76B17ea68B101" value="0xf16095EEFBA8B88fe92180c1aca76B17ea68B101">
+                </div>
+
+                <div class="batch-input">
+                    <div class="form-group">
+                        <label>Add Tokens to Transfer</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="batchTransferTokenId" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                <option value="0">0 - GOLD</option>
+                                <option value="1">1 - SILVER</option>
+                                <option value="2">2 - SWORD</option>
+                                <option value="3">3 - SHIELD</option>
+                                <option value="4">4 - CROWN</option>
+                                <option value="5">5 - WINNER_PRIZE</option>
+                            </select>
+                            <input type="number" id="batchTransferAmount" placeholder="Amount" value="50" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <button class="add-btn" onclick="addBatchTransferItem()">Add</button>
+                        </div>
+                    </div>
+
+                    <div class="batch-items" id="batchTransferItems"></div>
+                </div>
+
+                <button class="btn btn-success" onclick="batchTransferToken()" id="batchTransferBtn">Transfer Batch</button>
+                <div class="output-box" id="batchTransferOutput" style="display:none;"></div>
+            </div>
+
+            <!-- Check Balance Card -->
+            <div class="card">
+                <h2>💰 Check Balance</h2>
+                <p style="color: #666; margin-bottom: 15px; font-size: 0.95em;">Check the balance of tokens for a specific address.</p>
+
+                <div class="form-group">
+                    <label>Address to Check</label>
+                    <input type="text" id="balanceAddress" placeholder="0x..." value="">
+                </div>
+
+                <div class="form-group">
+                    <label>Token ID</label>
+                    <select id="balanceTokenId" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="0">0 - GOLD</option>
+                        <option value="1">1 - SILVER</option>
+                        <option value="2">2 - SWORD</option>
+                        <option value="3">3 - SHIELD</option>
+                        <option value="4">4 - CROWN</option>
+                        <option value="5">5 - WINNER_PRIZE</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-success" onclick="checkBalance()" id="balanceBtn">Check Balance</button>
+                <div class="output-box" id="balanceOutput" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contract ABI (Minimal) -->
+    <script>
+        // Contract ABI - Only essential functions
+        const CONTRACT_ABI = [
+            {
+                "inputs": [],
+                "name": "deploy",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {"internalType": "address", "name": "to", "type": "address"},
+                    {"internalType": "uint256", "name": "id", "type": "uint256"},
+                    {"internalType": "uint256", "name": "amount", "type": "uint256"},
+                    {"internalType": "bytes", "name": "data", "type": "bytes"}
+                ],
+                "name": "mint",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {"internalType": "address", "name": "to", "type": "address"},
+                    {"internalType": "uint256[]", "name": "ids", "type": "uint256[]"},
+                    {"internalType": "uint256[]", "name": "amounts", "type": "uint256[]"},
+                    {"internalType": "bytes", "name": "data", "type": "bytes"}
+                ],
+                "name": "mintBatch",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {"internalType": "address", "name": "from", "type": "address"},
+                    {"internalType": "address", "name": "to", "type": "address"},
+                    {"internalType": "uint256", "name": "id", "type": "uint256"},
+                    {"internalType": "uint256", "name": "amount", "type": "uint256"},
+                    {"internalType": "bytes", "name": "data", "type": "bytes"}
+                ],
+                "name": "safeTransferFrom",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {"internalType": "address", "name": "from", "type": "address"},
+                    {"internalType": "address", "name": "to", "type": "address"},
+                    {"internalType": "uint256[]", "name": "ids", "type": "uint256[]"},
+                    {"internalType": "uint256[]", "name": "amounts", "type": "uint256[]"},
+                    {"internalType": "bytes", "name": "data", "type": "bytes"}
+                ],
+                "name": "safeBatchTransferFrom",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {"internalType": "address", "name": "account", "type": "address"},
+                    {"internalType": "uint256", "name": "id", "type": "uint256"}
+                ],
+                "name": "balanceOf",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        // Global variables
+        let provider = null;
+        let signer = null;
+        let contract = null;
+        let walletAddress = null;
+        let contractAddress = null;
+        let batchItems = [];
+        let batchTransferItems = [];
+        const REQUIRED_CHAIN_ID = "0xaa36a7"; // Sepolia
+        const REQUIRED_CHAIN_NAME = "Sepolia";
+
+        // Token names for display
+        const TOKEN_NAMES = {
+            0: "GOLD",
+            1: "SILVER",
+            2: "SWORD",
+            3: "SHIELD",
+            4: "CROWN",
+            5: "WINNER_PRIZE"
+        };
+
+        // ==================== UI Output Functions ====================
+        function showOutput(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = message;
+            element.className = `output-box ${type}`;
+            element.style.display = 'block';
+        }
+
+        function clearOutput(elementId) {
+            document.getElementById(elementId).style.display = 'none';
+        }
+
+        function shortAddress(address) {
+            if (!address || address.length < 10) return address || "";
+            return `${address.slice(0, 6)}...${address.slice(-4)}`;
+        }
+
+        function updateNetworkStatus(chainId) {
+            const networkEl = document.getElementById('networkStatus');
+            if (!chainId) {
+                networkEl.textContent = 'Unknown';
+                return;
+            }
+            if (chainId.toLowerCase() === REQUIRED_CHAIN_ID) {
+                networkEl.innerHTML = `<span class="status-chip ok">${REQUIRED_CHAIN_NAME}</span>`;
+            } else {
+                networkEl.innerHTML = `<span class="status-chip warn">Wrong Network (${chainId})</span>`;
+            }
+        }
+
+        function ensureEthersLoaded() {
+            if (!window.ethers) {
+                showOutput('deployOutput', 'Error: ethers library failed to load. Refresh and retry.', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        async function initializeWalletState() {
+            if (!window.ethereum || !ensureEthersLoaded()) return;
+            try {
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                updateNetworkStatus(chainId);
+
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0) {
+                    walletAddress = accounts[0];
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    signer = await provider.getSigner();
+                    document.getElementById('walletStatus').textContent = 'Connected';
+                    document.getElementById('walletAddress').textContent = shortAddress(walletAddress);
+                    document.getElementById('connectBtn').textContent = 'Reconnect MetaMask';
+                    document.getElementById('connectBtn').disabled = false;
+                }
+            } catch (error) {
+                console.error('Wallet init error:', error);
+            }
+        }
+
+        // ==================== Wallet Connection ====================
+        async function connectWallet() {
+            try {
+                if (!ensureEthersLoaded()) {
+                    return;
+                }
+
+                if (!window.ethereum) {
+                    alert('MetaMask is not installed!');
+                    return;
+                }
+
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                walletAddress = accounts[0];
+
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+
+                document.getElementById('walletStatus').textContent = 'Connected';
+                document.getElementById('walletAddress').textContent = shortAddress(walletAddress);
+                document.getElementById('connectBtn').textContent = 'Reconnect MetaMask';
+                document.getElementById('connectBtn').disabled = false;
+                updateNetworkStatus(chainId);
+
+                if (chainId.toLowerCase() !== REQUIRED_CHAIN_ID) {
+                    showOutput('deployOutput', 'Wallet connected, but switch MetaMask network to Sepolia before deploying.', 'error');
+                    return;
+                }
+
+                showOutput('deployOutput', '✓ Wallet connected successfully!', 'success');
+
+            } catch (error) {
+                console.error('Error connecting wallet:', error);
+                showOutput('deployOutput', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        // ==================== Deploy Contract ====================
+        async function deployContract() {
+            try {
+                if (!ensureEthersLoaded()) {
+                    return;
+                }
+
+                if (!signer) {
+                    alert('Please connect your wallet first!');
+                    return;
+                }
+
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                if (chainId.toLowerCase() !== REQUIRED_CHAIN_ID) {
+                    showOutput('deployOutput', 'Error: Please switch MetaMask to Sepolia network first.', 'error');
+                    return;
+                }
+
+                showOutput('deployOutput', 'Deploying contract... ⏳', 'info');
+                document.getElementById('deployBtn').disabled = true;
+
+                // Load contract bytecode and ABI from artifacts
+                const response = await fetch('./artifacts/contracts/AwesomeGame.sol/AwesomeGame.json');
+                const artifact = await response.json();
+
+                const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, signer);
+                const deployedContract = await factory.deploy();
+
+                showOutput('deployOutput', `Deployment in progress...\nTx Hash: ${deployedContract.deploymentTransaction().hash}\n⏳ Waiting for confirmation...`, 'info');
+
+                await deployedContract.waitForDeployment();
+                contractAddress = await deployedContract.getAddress();
+                contract = deployedContract;
+
+                document.getElementById('contractAddress').textContent = contractAddress;
+
+                showOutput('deployOutput', `✓ Contract deployed successfully!\n\nContract Address: ${contractAddress}\n\nTransaction Hash: ${deployedContract.deploymentTransaction().hash}`, 'success');
+                document.getElementById('deployBtn').disabled = false;
+
+            } catch (error) {
+                console.error('Deployment error:', error);
+                showOutput('deployOutput', `Error: ${error.message}`, 'error');
+                document.getElementById('deployBtn').disabled = false;
+            }
+        }
+
+        // ==================== Mint Functions ====================
+        async function mintToken() {
+            try {
+                if (!ensureEthersLoaded()) {
+                    return;
+                }
+
+                if (!contract) {
+                    alert('Please deploy the contract first!');
+                    return;
+                }
+
+                const recipient = document.getElementById('mintRecipient').value;
+                const tokenId = document.getElementById('mintTokenId').value;
+                const amount = document.getElementById('mintAmount').value;
+
+                if (!recipient || !ethers.isAddress(recipient)) {
+                    alert('Please enter a valid recipient address!');
+                    return;
+                }
+
+                showOutput('mintOutput', 'Processing mint transaction... ⏳', 'info');
+                document.getElementById('mintBtn').disabled = true;
+
+                const tx = await contract.mint(
+                    recipient,
+                    tokenId,
+                    amount,
+                    "0x"
+                );
+
+                showOutput('mintOutput', `Transaction sent!\n\nHash: ${tx.hash}\n\n⏳ Waiting for confirmation...`, 'info');
+
+                const receipt = await tx.wait();
+
+                showOutput('mintOutput', `✓ Mint successful!\n\nTransaction Hash: ${receipt.hash}\n\nBlock: ${receipt.blockNumber}\n\nToken: ${TOKEN_NAMES[tokenId]} (ID: ${tokenId})\nAmount: ${amount}\nRecipient: ${recipient}`, 'success');
+
+                document.getElementById('mintBtn').disabled = false;
+
+            } catch (error) {
+                console.error('Mint error:', error);
+                showOutput('mintOutput', `Error: ${error.message}`, 'error');
+                document.getElementById('mintBtn').disabled = false;
+            }
+        }
+
+        function addBatchItem() {
+            const tokenId = document.getElementById('batchTokenId').value;
+            const amount = document.getElementById('batchTokenAmount').value;
+
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount!');
+                return;
+            }
+
+            batchItems.push({ tokenId, amount });
+            renderBatchItems();
+
+            document.getElementById('batchTokenAmount').value = '100';
+        }
+
+        function removeBatchItem(index) {
+            batchItems.splice(index, 1);
+            renderBatchItems();
+        }
+
+        function renderBatchItems() {
+            const container = document.getElementById('batchItems');
+            container.innerHTML = batchItems.map((item, index) => `
+                <div class="batch-item">
+                    <span>${TOKEN_NAMES[item.tokenId]} (ID: ${item.tokenId}) - Amount: ${item.amount}</span>
+                    <button class="remove-btn" onclick="removeBatchItem(${index})">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        async function mintBatch() {
+            try {
+                if (!ensureEthersLoaded()) {
+                    return;
+                }
+
+                if (!contract) {
+                    alert('Please deploy the contract first!');
+                    return;
+                }
+
+                const recipient = document.getElementById('batchRecipient').value;
+
+                if (!recipient || !ethers.isAddress(recipient)) {
+                    alert('Please enter a valid recipient address!');
+                    return;
+                }
+
+                if (batchItems.length === 0) {
+                    alert('Please add at least one token to the batch!');
+                    return;
+                }
+
+                const ids = batchItems.map(item => item.tokenId);
+                const amounts = batchItems.map(item => item.amount);
+
+                showOutput('batchMintOutput', 'Processing batch mint transaction... ⏳', 'info');
+                document.getElementById('batchMintBtn').disabled = true;
+
+                const tx = await contract.mintBatch(
+                    recipient,
+                    ids,
+                    amounts,
+                    "0x"
+                );
+
+                showOutput('batchMintOutput', `Transaction sent!\n\nHash: ${tx.hash}\n\n⏳ Waiting for confirmation...`, 'info');
+
+                const receipt = await tx.wait();
+
+                let tokenDetails = '';
+                for (let i = 0; i < ids.length; i++) {
+                    tokenDetails += `${TOKEN_NAMES[ids[i]]} (ID: ${ids[i]}) - Amount: ${amounts[i]}\n`;
+                }
+
+                showOutput('batchMintOutput', `✓ Batch mint successful!\n\nTransaction Hash: ${receipt.hash}\n\nBlock: ${receipt.blockNumber}\n\nTokens:\n${tokenDetails}\nRecipient: ${recipient}`, 'success');
+
+                batchItems = [];
+                renderBatchItems();
+                document.getElementById('batchMintBtn').disabled = false;
+
+            } catch (error) {
+                console.error('Batch mint error:', error);
+                showOutput('batchMintOutput', `Error: ${error.message}`, 'error');
+                document.getElementById('batchMintBtn').disabled = false;
+            }
+        }
+
+        // ==================== Transfer Functions ====================
+        async function transferToken() {
+            try {
+                if (!ensureEthersLoaded()) {
+                    return;
+                }
+
+                if (!contract) {
+                    alert('Please deploy the contract first!');
+                    return;
+                }
+
+                const recipient = document.getElementById('transferRecipient').value;
+                const tokenId = document.getElementById('transferTokenId').value;
+                const amount = document.getElementById('transferAmount').value;
+
+                if (!recipient || !ethers.isAddress(recipient)) {
+                    alert('Please enter a valid recipient address!');
+                    return;
+                }
+
+                showOutput('transferOutput', 'Processing transfer... ⏳', 'info');
+                document.getElementById('transferBtn').disabled = true;
+
+                const tx = await contract.safeTransferFrom(
+                    walletAddress,
+                    recipient,
+                    tokenId,
+                    amount,
+                    "0x"
+                );
+
+                showOutput('transferOutput', `Transaction sent!\n\nHash: ${tx.hash}\n\n⏳ Waiting for confirmation...`, 'info');
+
+                const receipt = await tx.wait();
+
+                showOutput('transferOutput', `✓ Transfer successful!\n\nTransaction Hash: ${receipt.hash}\n\nBlock: ${receipt.blockNumber}\n\nToken: ${TOKEN_NAMES[tokenId]} (ID: ${tokenId})\nAmount: ${amount}\nFrom: ${walletAddress}\nTo: ${recipient}`, 'success');
+
+                document.getElementById('transferBtn').disabled = false;
+
+            } catch (error) {
+                console.error('Transfer error:', error);
+                showOutput('transferOutput', `Error: ${error.message}`, 'error');
+                document.getElementById('transferBtn').disabled = false;
+            }
+        }
+
+        function addBatchTransferItem() {
+            const tokenId = document.getElementById('batchTransferTokenId').value;
+            const amount = document.getElementById('batchTransferAmount').value;
+
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount!');
+                return;
+            }
+
+            batchTransferItems.push({ tokenId, amount });
+            renderBatchTransferItems();
+
+            document.getElementById('batchTransferAmount').value = '50';
+        }
+
+        function removeBatchTransferItem(index) {
+            batchTransferItems.splice(index, 1);
+            renderBatchTransferItems();
+        }
+
+        function renderBatchTransferItems() {
+            const container = document.getElementById('batchTransferItems');
+            container.innerHTML = batchTransferItems.map((item, index) => `
+                <div class="batch-item">
+                    <span>${TOKEN_NAMES[item.tokenId]} (ID: ${item.tokenId}) - Amount: ${item.amount}</span>
+                    <button class="remove-btn" onclick="removeBatchTransferItem(${index})">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        async function batchTransferToken() {
+            try {
+                if (!ensureEthersLoaded()) {
+                    return;
+                }
+
+                if (!contract) {
+                    alert('Please deploy the contract first!');
+                    return;
+                }
+
+                const recipient = document.getElementById('batchTransferRecipient').value;
+
+                if (!recipient || !ethers.isAddress(recipient)) {
+                    alert('Please enter a valid recipient address!');
+                    return;
+                }
+
+                if (batchTransferItems.length === 0) {
+                    alert('Please add at least one token to transfer!');
+                    return;
+                }
+
+                const ids = batchTransferItems.map(item => item.tokenId);
+                const amounts = batchTransferItems.map(item => item.amount);
+
+                showOutput('batchTransferOutput', 'Processing batch transfer... ⏳', 'info');
+                document.getElementById('batchTransferBtn').disabled = true;
+
+                const tx = await contract.safeBatchTransferFrom(
+                    walletAddress,
+                    recipient,
+                    ids,
+                    amounts,
+                    "0x"
+                );
+
+                showOutput('batchTransferOutput', `Transaction sent!\n\nHash: ${tx.hash}\n\n⏳ Waiting for confirmation...`, 'info');
+
+                const receipt = await tx.wait();
+
+                let tokenDetails = '';
+                for (let i = 0; i < ids.length; i++) {
+                    tokenDetails += `${TOKEN_NAMES[ids[i]]} (ID: ${ids[i]}) - Amount: ${amounts[i]}\n`;
+                }
+
+                showOutput('batchTransferOutput', `✓ Batch transfer successful!\n\nTransaction Hash: ${receipt.hash}\n\nBlock: ${receipt.blockNumber}\n\nTokens:\n${tokenDetails}\nFrom: ${walletAddress}\nTo: ${recipient}`, 'success');
+
+                batchTransferItems = [];
+                renderBatchTransferItems();
+                document.getElementById('batchTransferBtn').disabled = false;
+
+            } catch (error) {
+                console.error('Batch transfer error:', error);
+                showOutput('batchTransferOutput', `Error: ${error.message}`, 'error');
+                document.getElementById('batchTransferBtn').disabled = false;
+            }
+        }
+
+        // ==================== Balance Check ====================
+        async function checkBalance() {
+            try {
+                if (!ensureEthersLoaded()) {
+                    return;
+                }
+
+                if (!contract) {
+                    alert('Please deploy the contract first!');
+                    return;
+                }
+
+                const address = document.getElementById('balanceAddress').value;
+                const tokenId = document.getElementById('balanceTokenId').value;
+
+                if (!address || !ethers.isAddress(address)) {
+                    alert('Please enter a valid address!');
+                    return;
+                }
+
+                showOutput('balanceOutput', 'Fetching balance... ⏳', 'info');
+
+                const balance = await contract.balanceOf(address, tokenId);
+
+                showOutput('balanceOutput', `✓ Balance retrieved!\n\nAddress: ${address}\nToken: ${TOKEN_NAMES[tokenId]} (ID: ${tokenId})\nBalance: ${balance.toString()}`, 'success');
+
+            } catch (error) {
+                console.error('Balance check error:', error);
+                showOutput('balanceOutput', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            await initializeWalletState();
+
+            if (window.ethereum) {
+                window.ethereum.on('accountsChanged', (accounts) => {
+                    if (!accounts || accounts.length === 0) {
+                        walletAddress = null;
+                        signer = null;
+                        provider = null;
+                        document.getElementById('walletStatus').textContent = 'Disconnected';
+                        document.getElementById('walletAddress').textContent = 'Not connected';
+                        document.getElementById('connectBtn').textContent = 'Connect MetaMask';
+                        showOutput('deployOutput', 'MetaMask disconnected. Reconnect wallet.', 'error');
+                        return;
+                    }
+                    walletAddress = accounts[0];
+                    document.getElementById('walletAddress').textContent = shortAddress(walletAddress);
+                    document.getElementById('walletStatus').textContent = 'Connected';
+                    showOutput('deployOutput', `Account switched: ${shortAddress(walletAddress)}`, 'info');
+                });
+
+                window.ethereum.on('chainChanged', (chainId) => {
+                    updateNetworkStatus(chainId);
+                    contract = null;
+                    contractAddress = null;
+                    document.getElementById('contractAddress').textContent = 'Not deployed';
+                    showOutput('deployOutput', 'Network changed. Please deploy/select contract again on this network.', 'info');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

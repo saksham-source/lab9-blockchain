@@ -1,0 +1,6 @@
+{
+  "name": "Champion's Trophy",
+  "description": "Awarded to the sole winner of AwesomeGame. One of one.",
+  "image": "ipfs://<IMAGE_CID>/trophy.png",
+  "properties": { "type": "prize", "unique": true }
+}
